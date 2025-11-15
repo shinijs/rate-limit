@@ -57,8 +57,10 @@ import { RateLimitModule } from '@shinijs/rate-limit';
 
 @Module({
   imports: [
-    ConfigModule.forRoot(),
-    RateLimitModule,
+    ConfigModule.forRoot({
+      isGlobal: true,
+    }),
+    RateLimitModule.forRoot(), // Use forRoot() for configuration options
   ],
 })
 export class AppModule {}
@@ -72,9 +74,49 @@ Create a `.env` file:
 REDIS_URL=redis://localhost:6379
 ```
 
-If Redis is not configured, the library will automatically fall back to memory-based rate limiting.
+If Redis is not configured, the library will automatically fall back to memory-based rate limiting that properly tracks hits in memory.
 
-### 3. Use the Decorator
+### 3. (Optional) Integrate Custom Logger
+
+To use `@shinijs/logger` with rate limiting for consistent logging:
+
+```typescript
+import { Module, Global } from '@nestjs/common';
+import { ConfigModule } from '@nestjs/config';
+import { LoggerModule, LoggerFactory } from '@shinijs/logger';
+import { RateLimitModule } from '@shinijs/rate-limit';
+
+export const RATE_LIMIT_LOGGER_TOKEN = Symbol('RATE_LIMIT_LOGGER');
+
+@Global()
+@Module({
+  providers: [
+    {
+      provide: RATE_LIMIT_LOGGER_TOKEN,
+      useFactory: (loggerFactory: LoggerFactory) => {
+        return loggerFactory.createLogger('RateLimit');
+      },
+      inject: [LoggerFactory],
+    },
+  ],
+  exports: [RATE_LIMIT_LOGGER_TOKEN],
+})
+class RateLimitLoggerModule {}
+
+@Module({
+  imports: [
+    ConfigModule.forRoot({ isGlobal: true }),
+    LoggerModule,
+    RateLimitLoggerModule,
+    RateLimitModule.forRoot({
+      loggerToken: RATE_LIMIT_LOGGER_TOKEN, // Inject custom logger
+    }),
+  ],
+})
+export class AppModule {}
+```
+
+### 4. Use the Decorator
 
 ```typescript
 import { Controller, Get } from '@nestjs/common';
@@ -90,7 +132,7 @@ export class ApiController {
 }
 ```
 
-### 4. Or Use the Guard
+### 5. Or Use the Guard
 
 ```typescript
 import { Controller, Get, UseGuards } from '@nestjs/common';
@@ -107,7 +149,7 @@ export class ApiController {
 }
 ```
 
-### 5. Or Use the Service Directly
+### 6. Or Use the Service Directly
 
 ```typescript
 import { Injectable } from '@nestjs/common';
@@ -160,6 +202,27 @@ REDIS_URL=redis://localhost:6379/0
 ```
 
 ## API Reference
+
+### RateLimitModule
+
+#### `RateLimitModule.forRoot(options?: RateLimitModuleOptions)`
+
+Configure the rate limit module with optional logger injection.
+
+**Options:**
+```typescript
+interface RateLimitModuleOptions {
+  loggerToken?: string | symbol; // Token to inject logger from DI container
+  logger?: LoggerService;        // Logger instance to use directly
+}
+```
+
+**Example:**
+```typescript
+RateLimitModule.forRoot({
+  loggerToken: YOUR_LOGGER_TOKEN, // Inject custom logger via DI token
+})
+```
 
 ### RateLimitService
 
@@ -225,6 +288,7 @@ A NestJS interceptor that enforces rate limits and adds rate limit headers to re
 - ⚠️ Only works for single-instance applications
 - ⚠️ Rate limits reset on application restart
 - ⚠️ Not suitable for distributed systems
+- ✅ Properly tracks hits in memory (fixed in latest version)
 - ℹ️ Automatically used when Redis is not available
 
 ## Testing
