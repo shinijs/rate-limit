@@ -1,10 +1,11 @@
+/* eslint-disable no-undef */
 import { Test, TestingModule } from '@nestjs/testing';
 import { ExecutionContext, CallHandler } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { of, throwError } from 'rxjs';
 import { RateLimitInterceptor } from '../interceptors/rate-limit.interceptor';
 import { RateLimitService } from '../RateLimit.service';
-import { RATE_LIMIT_METADATA, RateLimitOptions } from '../decorators/rate-limit.decorator';
+import { RateLimitOptions } from '../decorators/rate-limit.decorator';
 import type { Request, Response } from 'express';
 
 describe('RateLimitInterceptor', () => {

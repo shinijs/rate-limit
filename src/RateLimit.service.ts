@@ -16,6 +16,7 @@ export const RATE_LIMIT_LOGGER = Symbol('RATE_LIMIT_LOGGER');
 @Injectable()
 export class RateLimitService implements IRateLimit, OnModuleDestroy {
   private readonly logger: LoggerService;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   private redis: any = null; // Using any since ioredis is optional
 
   constructor(

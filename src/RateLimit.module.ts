@@ -12,6 +12,7 @@ export interface RateLimitModuleOptions {
 @Module({})
 export class RateLimitModule {
   static forRoot(options?: RateLimitModuleOptions): DynamicModule {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const providers: any[] = [
       RateLimitService,
       RateLimitGuard,
