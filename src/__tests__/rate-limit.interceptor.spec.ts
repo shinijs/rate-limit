@@ -164,5 +164,130 @@ describe('RateLimitInterceptor', () => {
         },
       });
     });
+
+    it('should handle error when decrementRateLimit fails', done => {
+      const options: RateLimitOptions = {
+        requests: 10,
+        window: '1m',
+        skipSuccessfulRequests: true,
+      };
+
+      jest.spyOn(reflector, 'getAllAndOverride').mockReturnValue(options);
+      mockResponse.statusCode = 200;
+
+      rateLimitService.decrementRateLimit.mockRejectedValueOnce(new Error('Decrement failed'));
+
+      interceptor.intercept(mockContext, mockHandler).subscribe({
+        next: () => {
+          setTimeout(() => {
+            // Should not throw, error should be handled internally
+            done();
+          }, 10);
+        },
+      });
+    });
+
+    it('should use request.path when route.path is not available', done => {
+      const options: RateLimitOptions = {
+        requests: 10,
+        window: '1m',
+        skipSuccessfulRequests: true,
+      };
+
+      const mockRequestNoRoute = {
+        ip: '127.0.0.1',
+        path: '/alternative-path',
+        method: 'GET',
+        socket: { remoteAddress: '127.0.0.1' },
+        route: undefined,
+      } as unknown as Request;
+
+      const mockContextNoRoute = {
+        switchToHttp: jest.fn(() => ({
+          getRequest: () => mockRequestNoRoute,
+          getResponse: () => mockResponse,
+        })),
+        getHandler: jest.fn(),
+        getClass: jest.fn(),
+      } as unknown as ExecutionContext;
+
+      jest.spyOn(reflector, 'getAllAndOverride').mockReturnValue(options);
+      mockResponse.statusCode = 200;
+
+      interceptor.intercept(mockContextNoRoute, mockHandler).subscribe({
+        next: () => {
+          setTimeout(() => {
+            expect(rateLimitService.decrementRateLimit).toHaveBeenCalled();
+            done();
+          }, 10);
+        },
+      });
+    });
+
+    it('should use fallback path when request.path is not a string', done => {
+      const options: RateLimitOptions = {
+        requests: 10,
+        window: '1m',
+        skipSuccessfulRequests: true,
+      };
+
+      const mockRequestInvalidPath = {
+        ip: '127.0.0.1',
+        path: null,
+        method: 'GET',
+        socket: { remoteAddress: '127.0.0.1' },
+        route: undefined,
+      } as unknown as Request;
+
+      const mockContextInvalidPath = {
+        switchToHttp: jest.fn(() => ({
+          getRequest: () => mockRequestInvalidPath,
+          getResponse: () => mockResponse,
+        })),
+        getHandler: jest.fn(),
+        getClass: jest.fn(),
+      } as unknown as ExecutionContext;
+
+      jest.spyOn(reflector, 'getAllAndOverride').mockReturnValue(options);
+      mockResponse.statusCode = 200;
+
+      interceptor.intercept(mockContextInvalidPath, mockHandler).subscribe({
+        next: () => {
+          setTimeout(() => {
+            expect(rateLimitService.decrementRateLimit).toHaveBeenCalled();
+            done();
+          }, 10);
+        },
+      });
+    });
+
+    it('should handle error response with statusCode in response object', done => {
+      const options: RateLimitOptions = {
+        requests: 10,
+        window: '1m',
+        skipFailedRequests: true,
+      };
+
+      jest.spyOn(reflector, 'getAllAndOverride').mockReturnValue(options);
+
+      const errorHandler: CallHandler = {
+        handle: jest.fn(() =>
+          throwError(() => ({
+            response: {
+              statusCode: 500,
+            },
+          }))
+        ),
+      } as unknown as CallHandler;
+
+      interceptor.intercept(mockContext, errorHandler).subscribe({
+        error: () => {
+          setTimeout(() => {
+            expect(rateLimitService.decrementRateLimit).toHaveBeenCalled();
+            done();
+          }, 10);
+        },
+      });
+    });
   });
 });

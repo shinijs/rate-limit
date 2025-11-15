@@ -170,5 +170,87 @@ describe('RateLimitGuard', () => {
         options
       );
     });
+
+    it('should use request.path when route.path is not available', async () => {
+      const options: RateLimitOptions = {
+        requests: 10,
+        window: '1m',
+      };
+
+      const mockRequestNoRoute = {
+        ip: '127.0.0.1',
+        path: '/alternative-path',
+        method: 'GET',
+        socket: { remoteAddress: '127.0.0.1' },
+        route: undefined,
+        get: jest.fn(() => 'test-agent'),
+      } as unknown as Request;
+
+      const mockContextNoRoute = {
+        switchToHttp: jest.fn(() => ({
+          getRequest: () => mockRequestNoRoute,
+          getResponse: () => mockResponse,
+        })),
+        getHandler: jest.fn(),
+        getClass: jest.fn(),
+      } as unknown as ExecutionContext;
+
+      jest.spyOn(reflector, 'getAllAndOverride').mockReturnValue(options);
+
+      rateLimitService.checkRateLimit.mockResolvedValue({
+        allowed: true,
+        remaining: 5,
+        resetTime: Date.now() + 60000,
+        totalHits: 5,
+      });
+
+      await guard.canActivate(mockContextNoRoute);
+
+      expect(rateLimitService.checkRateLimit).toHaveBeenCalledWith(
+        'rate_limit:127.0.0.1:/alternative-path',
+        options
+      );
+    });
+
+    it('should use fallback path when request.path is not a string', async () => {
+      const options: RateLimitOptions = {
+        requests: 10,
+        window: '1m',
+      };
+
+      const mockRequestInvalidPath = {
+        ip: '127.0.0.1',
+        path: null,
+        method: 'GET',
+        socket: { remoteAddress: '127.0.0.1' },
+        route: undefined,
+        get: jest.fn(() => 'test-agent'),
+      } as unknown as Request;
+
+      const mockContextInvalidPath = {
+        switchToHttp: jest.fn(() => ({
+          getRequest: () => mockRequestInvalidPath,
+          getResponse: () => mockResponse,
+        })),
+        getHandler: jest.fn(),
+        getClass: jest.fn(),
+      } as unknown as ExecutionContext;
+
+      jest.spyOn(reflector, 'getAllAndOverride').mockReturnValue(options);
+
+      rateLimitService.checkRateLimit.mockResolvedValue({
+        allowed: true,
+        remaining: 5,
+        resetTime: Date.now() + 60000,
+        totalHits: 5,
+      });
+
+      await guard.canActivate(mockContextInvalidPath);
+
+      expect(rateLimitService.checkRateLimit).toHaveBeenCalledWith(
+        'rate_limit:127.0.0.1:/',
+        options
+      );
+    });
   });
 });
