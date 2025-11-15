@@ -1,6 +1,6 @@
 {
   "name": "@shinijs/rate-limit",
-  "version": "0.0.0",
+  "version": "1.0.0",
   "description": "A nest js wrapper for rate-limit",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -96,4 +96,3 @@
     "vitepress": "^1.5.0"
   }
 }
-
