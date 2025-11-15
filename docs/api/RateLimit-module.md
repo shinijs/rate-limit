@@ -14,9 +14,35 @@ import { RateLimitModule } from '@shinijs/rate-limit';
 ```
 
 **Usage:**
+
+Basic:
 ```typescript
 @Module({
-  imports: [RateLimitModule],
+  imports: [RateLimitModule.forRoot()],
+})
+export class AppModule {}
+```
+
+With custom logger via token:
+```typescript
+@Module({
+  imports: [
+    RateLimitModule.forRoot({
+      loggerToken: YOUR_LOGGER_TOKEN, // Inject logger from DI container
+    }),
+  ],
+})
+export class AppModule {}
+```
+
+With logger instance:
+```typescript
+@Module({
+  imports: [
+    RateLimitModule.forRoot({
+      logger: customLoggerInstance, // Provide logger directly
+    }),
+  ],
 })
 export class AppModule {}
 ```
