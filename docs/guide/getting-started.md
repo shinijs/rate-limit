@@ -2,6 +2,63 @@
 
 This guide will help you get started with `@shinijs/rate-limit`.
 
+## Quick Start
+
+The fastest way to get started with `@shinijs/rate-limit`:
+
+### 1. Install the package
+
+```bash
+pnpm add @shinijs/rate-limit
+# Optional: for distributed rate limiting
+pnpm add ioredis
+```
+
+### 2. Add to your AppModule
+
+```typescript
+import { Module } from '@nestjs/common';
+import { ConfigModule } from '@nestjs/config';
+import { RateLimitModule } from '@shinijs/rate-limit';
+
+@Module({
+  imports: [
+    ConfigModule.forRoot({
+      isGlobal: true,
+    }),
+    RateLimitModule.forRoot(), // That's it! Rate limiting is now available
+  ],
+})
+export class AppModule {}
+```
+
+### 3. Use the decorator on your routes
+
+```typescript
+import { Controller, Get, UseGuards } from '@nestjs/common';
+import { RateLimit, RateLimitGuard } from '@shinijs/rate-limit';
+
+@Controller('api')
+@UseGuards(RateLimitGuard)
+export class ApiController {
+  @Get('users')
+  @RateLimit({ requests: 10, window: '1m' }) // 10 requests per minute
+  getUsers() {
+    return { users: [] };
+  }
+}
+```
+
+**That's it!** Rate limiting is now active. The library will automatically use Redis if configured, or fall back to memory-based limiting.
+
+### Optional: Configure Redis (for production)
+
+Add to your `.env` file:
+
+```env
+REDIS_URL=redis://localhost:6379
+```
+
 ## Installation
 
 Install the package using your preferred package manager:

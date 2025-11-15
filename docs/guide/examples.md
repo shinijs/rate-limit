@@ -266,6 +266,58 @@ export class HealthController {
 }
 ```
 
+## Integrating with Custom Logger
+
+Use `@shinijs/logger` with `@shinijs/rate-limit` for consistent logging:
+
+```typescript
+import { Module, Global } from '@nestjs/common';
+import { ConfigModule } from '@nestjs/config';
+import { LoggerModule, LoggerFactory } from '@shinijs/logger';
+import { RateLimitModule } from '@shinijs/rate-limit';
+
+// Token for RateLimit logger provider
+export const RATE_LIMIT_LOGGER_TOKEN = Symbol('RATE_LIMIT_LOGGER');
+
+// Create a global module to provide the logger token
+@Global()
+@Module({
+  providers: [
+    {
+      provide: RATE_LIMIT_LOGGER_TOKEN,
+      useFactory: (loggerFactory: LoggerFactory) => {
+        return loggerFactory.createLogger('RateLimit');
+      },
+      inject: [LoggerFactory],
+    },
+  ],
+  exports: [RATE_LIMIT_LOGGER_TOKEN],
+})
+class RateLimitLoggerModule {}
+
+@Module({
+  imports: [
+    ConfigModule.forRoot({
+      isGlobal: true,
+    }),
+    LoggerModule, // Import logger module first
+    RateLimitLoggerModule, // Provide logger for rate limit
+    RateLimitModule.forRoot({
+      loggerToken: RATE_LIMIT_LOGGER_TOKEN, // Inject custom logger
+    }),
+  ],
+})
+export class AppModule {}
+```
+
+Now rate limit logs will use your custom logger with the "RateLimit" context:
+
+```
+INFO [20:17:12]: RateLimit Connected to Redis for rate limiting
+DEBUG [20:17:17]: RateLimitGuard Rate limit check passed
+WARN [20:17:23]: RateLimitGuard Rate limit exceeded
+```
+
 ## Custom Rate Limit Keys
 
 Create complex rate limit keys based on multiple factors:
