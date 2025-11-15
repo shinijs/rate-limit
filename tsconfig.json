@@ -17,7 +17,7 @@
       "@/*": ["src/*"]
     },
     "target": "ES2022",
-    "module": "ESNext",
+    "module": "commonjs",
     "experimentalDecorators": true,
     "emitDecoratorMetadata": true
   },

@@ -18,6 +18,8 @@ export class RateLimitService implements IRateLimit, OnModuleDestroy {
   private readonly logger: LoggerService;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   private redis: any = null; // Using any since ioredis is optional
+  // In-memory fallback rate limit storage: key -> array of timestamps
+  private readonly fallbackStorage = new Map<string, number[]>();
 
   constructor(
     private readonly configService: ConfigService,
@@ -42,9 +44,15 @@ export class RateLimitService implements IRateLimit, OnModuleDestroy {
       }
 
       // Try to dynamically import ioredis
-      const { Redis } = await import('ioredis');
+      const ioredisModule = await import('ioredis');
+      // Handle both default and named exports
+      // ioredis v5 exports Redis as default or named export depending on module system
+      const RedisClass = (ioredisModule.default || ioredisModule.Redis || ioredisModule) as new (
+        url: string,
+        options?: import('ioredis').RedisOptions,
+      ) => import('ioredis').Redis;
 
-      this.redis = new Redis(redisUrl, {
+      this.redis = new RedisClass(redisUrl, {
         maxRetriesPerRequest: 3,
         lazyConnect: true,
       });
@@ -138,15 +146,59 @@ export class RateLimitService implements IRateLimit, OnModuleDestroy {
     };
   }
 
-  private fallbackRateLimit(_key: string, options: RateLimitOptions, now: number): RateLimitResult {
-    this.logger.warn?.('Using fallback rate limiting - not suitable for distributed systems');
+  private fallbackRateLimit(key: string, options: RateLimitOptions, now: number): RateLimitResult {
+    const windowMs = this.parseWindow(options.window);
+    const windowStart = now - windowMs;
+
+    // Get or create the entry for this key
+    let timestamps = this.fallbackStorage.get(key);
+    if (!timestamps) {
+      timestamps = [];
+      this.fallbackStorage.set(key, timestamps);
+    }
+
+    // Remove timestamps outside the current window
+    const validTimestamps = timestamps.filter((timestamp) => timestamp > windowStart);
+    
+    // Add current request timestamp
+    validTimestamps.push(now);
+    
+    // Update storage
+    this.fallbackStorage.set(key, validTimestamps);
+
+    // Count hits (including current request)
+    const hits = validTimestamps.length;
+    const allowed = hits <= options.requests;
+    const remaining = Math.max(0, options.requests - hits);
+    const resetTime = now + windowMs;
+
+    // Log warning only once per key to avoid spam
+    if (hits === 1) {
+      this.logger.warn?.('Using fallback rate limiting - not suitable for distributed systems');
+    }
+
+    // Cleanup old entries periodically (every 1000 requests to avoid performance impact)
+    if (this.fallbackStorage.size > 1000) {
+      this.cleanupFallbackStorage(windowStart);
+    }
 
     return {
-      allowed: true,
-      remaining: options.requests,
-      resetTime: now + this.parseWindow(options.window),
-      totalHits: 0,
+      allowed,
+      remaining,
+      resetTime,
+      totalHits: hits,
     };
+  }
+
+  private cleanupFallbackStorage(windowStart: number): void {
+    for (const [key, timestamps] of this.fallbackStorage.entries()) {
+      const validTimestamps = timestamps.filter((timestamp) => timestamp > windowStart);
+      if (validTimestamps.length === 0) {
+        this.fallbackStorage.delete(key);
+      } else {
+        this.fallbackStorage.set(key, validTimestamps);
+      }
+    }
   }
 
   private parseWindow(window: string): number {
@@ -168,10 +220,17 @@ export class RateLimitService implements IRateLimit, OnModuleDestroy {
 
   async decrementRateLimit(key: string): Promise<void> {
     if (!this.redis) {
-      // In fallback mode, we can't decrement since we don't track properly
-      this.logger.warn?.('Cannot decrement rate limit in fallback mode', {
-        key,
-      });
+      // In fallback mode, remove the most recent timestamp
+      const timestamps = this.fallbackStorage.get(key);
+      if (timestamps && timestamps.length > 0) {
+        // Remove the most recent (last) timestamp
+        timestamps.pop();
+        if (timestamps.length === 0) {
+          this.fallbackStorage.delete(key);
+        } else {
+          this.fallbackStorage.set(key, timestamps);
+        }
+      }
       return;
     }
 
@@ -226,5 +285,7 @@ export class RateLimitService implements IRateLimit, OnModuleDestroy {
     if (this.redis) {
       this.redis.disconnect();
     }
+    // Cleanup fallback storage
+    this.fallbackStorage.clear();
   }
 }
