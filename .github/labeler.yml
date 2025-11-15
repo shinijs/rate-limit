@@ -1,0 +1,55 @@
+# Labeler configuration for automatic PR labeling based on changed files
+# Labels will be automatically applied when PRs are opened or updated
+
+# Source code changes
+source:
+  - changed-files:
+      - any-glob-to-any-file: 'src/**'
+      - any-glob-to-any-file: 'src/**/*'
+
+# Testing changes
+tests:
+  - changed-files:
+      - any-glob-to-any-file: '**/*.spec.ts'
+      - any-glob-to-any-file: '**/*.test.ts'
+      - any-glob-to-any-file: '**/__tests__/**'
+      - any-glob-to-any-file: 'jest.config.*'
+
+# Documentation changes
+documentation:
+  - changed-files:
+      - any-glob-to-any-file: '*.md'
+      - any-glob-to-any-file: 'docs/**'
+      - any-glob-to-any-file: 'README.md'
+      - any-glob-to-any-file: 'CHANGELOG.md'
+      - any-glob-to-any-file: 'CONTRIBUTING.md'
+      - any-glob-to-any-file: 'CODE_OF_CONDUCT.md'
+
+# Dependency and package management
+dependencies:
+  - changed-files:
+      - any-glob-to-any-file: 'package.json'
+      - any-glob-to-any-file: 'pnpm-lock.yaml'
+
+# Configuration changes
+config:
+  - changed-files:
+      - any-glob-to-any-file: 'tsconfig.json'
+      - any-glob-to-any-file: 'tsconfig.build.json'
+      - any-glob-to-any-file: '*.config.js'
+      - any-glob-to-any-file: '*.config.mjs'
+      - any-glob-to-any-file: 'eslint.config.*'
+      - any-glob-to-any-file: '.prettierrc'
+      - any-glob-to-any-file: 'jest.config.*'
+      - any-glob-to-any-file: '.editorconfig'
+      - any-glob-to-any-file: '.gitignore'
+      - any-glob-to-any-file: '.npmignore'
+
+# CI/CD and GitHub workflows
+ci:
+  - changed-files:
+      - any-glob-to-any-file: '.github/**'
+      - any-glob-to-any-file: '.github/workflows/**'
+      - any-glob-to-any-file: '.github/dependabot.yml'
+      - any-glob-to-any-file: '.github/labeler.yml'
+
