@@ -56,7 +56,7 @@ export class RateLimitService implements IRateLimit, OnModuleDestroy {
 
       this.redis = new (RedisConstructor as new (
         url: string,
-        options?: import('ioredis').RedisOptions,
+        options?: import('ioredis').RedisOptions
       ) => import('ioredis').Redis)(redisUrl, {
         maxRetriesPerRequest: 3,
         lazyConnect: true,
