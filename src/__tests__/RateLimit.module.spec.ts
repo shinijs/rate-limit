@@ -29,10 +29,7 @@ describe('RateLimitModule', () => {
       };
 
       const module: TestingModule = await Test.createTestingModule({
-        imports: [
-          RateLimitModule.forRoot({ logger: customLogger }),
-          ConfigModule.forRoot(),
-        ],
+        imports: [RateLimitModule.forRoot({ logger: customLogger }), ConfigModule.forRoot()],
       }).compile();
 
       expect(module).toBeDefined();
@@ -66,9 +63,7 @@ describe('RateLimitModule', () => {
     });
 
     it('should provide RateLimitInterceptor', () => {
-      const interceptor = module.get<RateLimitInterceptor>(
-        RateLimitInterceptor,
-      );
+      const interceptor = module.get<RateLimitInterceptor>(RateLimitInterceptor);
       expect(interceptor).toBeDefined();
       expect(interceptor).toBeInstanceOf(RateLimitInterceptor);
     });
@@ -106,9 +101,7 @@ describe('RateLimitModule', () => {
         imports: [RateLimitModule.forRoot(), ConfigModule.forRoot()],
       }).compile();
 
-      const interceptor = module.get<RateLimitInterceptor>(
-        RateLimitInterceptor,
-      );
+      const interceptor = module.get<RateLimitInterceptor>(RateLimitInterceptor);
       expect(interceptor).toBeDefined();
       await module.close();
     });

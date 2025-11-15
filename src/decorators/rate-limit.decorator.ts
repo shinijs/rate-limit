@@ -1,9 +1,4 @@
-import {
-  SetMetadata,
-  applyDecorators,
-  UseGuards,
-  UseInterceptors,
-} from '@nestjs/common';
+import { SetMetadata, applyDecorators, UseGuards, UseInterceptors } from '@nestjs/common';
 import type { Request } from 'express';
 import { RateLimitGuard } from '../guards/rate-limit.guard';
 import { RateLimitInterceptor } from '../interceptors/rate-limit.interceptor';
@@ -120,8 +115,6 @@ export const RateLimit = (options: RateLimitOptions) => {
   return applyDecorators(
     SetMetadata(RATE_LIMIT_METADATA, defaultOptions),
     UseGuards(RateLimitGuard),
-    UseInterceptors(RateLimitInterceptor),
+    UseInterceptors(RateLimitInterceptor)
   );
 };
-
-

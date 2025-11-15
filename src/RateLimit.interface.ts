@@ -8,11 +8,7 @@ export interface RateLimitResult {
 }
 
 export interface IRateLimit {
-  checkRateLimit(
-    key: string,
-    options: RateLimitOptions,
-  ): Promise<RateLimitResult>;
+  checkRateLimit(key: string, options: RateLimitOptions): Promise<RateLimitResult>;
   decrementRateLimit(key: string): Promise<void>;
   healthCheck(): Promise<boolean>;
 }
-

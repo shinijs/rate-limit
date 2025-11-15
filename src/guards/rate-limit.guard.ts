@@ -12,10 +12,7 @@ import {
 import { Reflector } from '@nestjs/core';
 import { Request, Response } from 'express';
 import { RateLimitService } from '../RateLimit.service';
-import {
-  RATE_LIMIT_METADATA,
-  RateLimitOptions,
-} from '../decorators/rate-limit.decorator';
+import { RATE_LIMIT_METADATA, RateLimitOptions } from '../decorators/rate-limit.decorator';
 import { RATE_LIMIT_LOGGER } from '../RateLimit.service';
 
 /**
@@ -69,17 +66,16 @@ export class RateLimitGuard implements CanActivate {
     private readonly reflector: Reflector,
     @Optional()
     @Inject(RATE_LIMIT_LOGGER)
-    logger?: LoggerService,
+    logger?: LoggerService
   ) {
     this.logger = logger || new Logger(RateLimitGuard.name);
   }
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
-    const rateLimitOptions =
-      this.reflector.getAllAndOverride<RateLimitOptions>(
-        RATE_LIMIT_METADATA,
-        [context.getHandler(), context.getClass()],
-      );
+    const rateLimitOptions = this.reflector.getAllAndOverride<RateLimitOptions>(
+      RATE_LIMIT_METADATA,
+      [context.getHandler(), context.getClass()]
+    );
 
     if (!rateLimitOptions) {
       return true;
@@ -92,10 +88,7 @@ export class RateLimitGuard implements CanActivate {
     const key = this.generateKey(request, rateLimitOptions);
 
     try {
-      const result = await this.rateLimitService.checkRateLimit(
-        key,
-        rateLimitOptions,
-      );
+      const result = await this.rateLimitService.checkRateLimit(key, rateLimitOptions);
 
       // Set rate limit headers
       this.setRateLimitHeaders(response, result, rateLimitOptions);
@@ -119,7 +112,7 @@ export class RateLimitGuard implements CanActivate {
             error: 'Rate limit exceeded',
             retryAfter: Math.ceil((result.resetTime - Date.now()) / 1000),
           },
-          HttpStatus.TOO_MANY_REQUESTS,
+          HttpStatus.TOO_MANY_REQUESTS
         );
       }
 
@@ -173,7 +166,7 @@ export class RateLimitGuard implements CanActivate {
   private setRateLimitHeaders(
     response: Response,
     result: { remaining: number; resetTime: number; totalHits: number },
-    options: RateLimitOptions,
+    options: RateLimitOptions
   ): void {
     response.setHeader('X-RateLimit-Limit', options.requests);
     response.setHeader('X-RateLimit-Remaining', Math.max(0, result.remaining));
@@ -181,12 +174,7 @@ export class RateLimitGuard implements CanActivate {
     response.setHeader('X-RateLimit-Window', options.window);
 
     if (result.remaining <= 0) {
-      response.setHeader(
-        'Retry-After',
-        Math.ceil((result.resetTime - Date.now()) / 1000),
-      );
+      response.setHeader('Retry-After', Math.ceil((result.resetTime - Date.now()) / 1000));
     }
   }
 }
-
-

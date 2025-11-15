@@ -85,10 +85,7 @@ describe('RateLimitGuard', () => {
 
       expect(result).toBe(true);
       expect(rateLimitService.checkRateLimit).toHaveBeenCalled();
-      expect(mockResponse.setHeader).toHaveBeenCalledWith(
-        'X-RateLimit-Limit',
-        10,
-      );
+      expect(mockResponse.setHeader).toHaveBeenCalledWith('X-RateLimit-Limit', 10);
     });
 
     it('should throw HttpException when limit exceeded', async () => {
@@ -106,9 +103,7 @@ describe('RateLimitGuard', () => {
         totalHits: 11,
       });
 
-      await expect(guard.canActivate(mockContext)).rejects.toThrow(
-        HttpException,
-      );
+      await expect(guard.canActivate(mockContext)).rejects.toThrow(HttpException);
 
       await expect(guard.canActivate(mockContext)).rejects.toMatchObject({
         status: HttpStatus.TOO_MANY_REQUESTS,
@@ -123,9 +118,7 @@ describe('RateLimitGuard', () => {
 
       jest.spyOn(reflector, 'getAllAndOverride').mockReturnValue(options);
 
-      rateLimitService.checkRateLimit.mockRejectedValue(
-        new Error('Service error'),
-      );
+      rateLimitService.checkRateLimit.mockRejectedValue(new Error('Service error'));
 
       const result = await guard.canActivate(mockContext);
 
@@ -138,7 +131,7 @@ describe('RateLimitGuard', () => {
       const options: RateLimitOptions = {
         requests: 10,
         window: '1m',
-        keyGenerator: (req) => `custom:${req.ip}`,
+        keyGenerator: req => `custom:${req.ip}`,
       };
 
       jest.spyOn(reflector, 'getAllAndOverride').mockReturnValue(options);
@@ -152,10 +145,7 @@ describe('RateLimitGuard', () => {
 
       await guard.canActivate(mockContext);
 
-      expect(rateLimitService.checkRateLimit).toHaveBeenCalledWith(
-        'custom:127.0.0.1',
-        options,
-      );
+      expect(rateLimitService.checkRateLimit).toHaveBeenCalledWith('custom:127.0.0.1', options);
     });
 
     it('should use default key format when no keyGenerator', async () => {
@@ -177,9 +167,8 @@ describe('RateLimitGuard', () => {
 
       expect(rateLimitService.checkRateLimit).toHaveBeenCalledWith(
         'rate_limit:127.0.0.1:/test',
-        options,
+        options
       );
     });
   });
 });
-

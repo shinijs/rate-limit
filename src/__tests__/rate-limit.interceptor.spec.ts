@@ -4,10 +4,7 @@ import { Reflector } from '@nestjs/core';
 import { of, throwError } from 'rxjs';
 import { RateLimitInterceptor } from '../interceptors/rate-limit.interceptor';
 import { RateLimitService } from '../RateLimit.service';
-import {
-  RATE_LIMIT_METADATA,
-  RateLimitOptions,
-} from '../decorators/rate-limit.decorator';
+import { RATE_LIMIT_METADATA, RateLimitOptions } from '../decorators/rate-limit.decorator';
 import type { Request, Response } from 'express';
 
 describe('RateLimitInterceptor', () => {
@@ -72,7 +69,7 @@ describe('RateLimitInterceptor', () => {
       expect(rateLimitService.decrementRateLimit).not.toHaveBeenCalled();
     });
 
-    it('should not decrement for normal successful request', (done) => {
+    it('should not decrement for normal successful request', done => {
       const options: RateLimitOptions = {
         requests: 10,
         window: '1m',
@@ -91,7 +88,7 @@ describe('RateLimitInterceptor', () => {
       });
     });
 
-    it('should decrement for successful request when skipSuccessfulRequests is true', (done) => {
+    it('should decrement for successful request when skipSuccessfulRequests is true', done => {
       const options: RateLimitOptions = {
         requests: 10,
         window: '1m',
@@ -111,7 +108,7 @@ describe('RateLimitInterceptor', () => {
       });
     });
 
-    it('should decrement for failed request when skipFailedRequests is true', (done) => {
+    it('should decrement for failed request when skipFailedRequests is true', done => {
       const options: RateLimitOptions = {
         requests: 10,
         window: '1m',
@@ -125,7 +122,7 @@ describe('RateLimitInterceptor', () => {
           throwError(() => ({
             status: 400,
             message: 'Bad Request',
-          })),
+          }))
         ),
       } as unknown as CallHandler;
 
@@ -139,7 +136,7 @@ describe('RateLimitInterceptor', () => {
       });
     });
 
-    it('should not decrement for failed request when skipFailedRequests is false', (done) => {
+    it('should not decrement for failed request when skipFailedRequests is false', done => {
       const options: RateLimitOptions = {
         requests: 10,
         window: '1m',
@@ -153,7 +150,7 @@ describe('RateLimitInterceptor', () => {
           throwError(() => ({
             status: 400,
             message: 'Bad Request',
-          })),
+          }))
         ),
       } as unknown as CallHandler;
 
@@ -168,4 +165,3 @@ describe('RateLimitInterceptor', () => {
     });
   });
 });
-

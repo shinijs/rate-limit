@@ -10,6 +10,5 @@ export default registerAs(
   (): RateLimitConfig => ({
     enabled: process.env.RateLimit_ENABLED !== 'false',
     redisUrl: process.env.REDIS_URL || 'redis://localhost:6379',
-  }),
+  })
 );
-

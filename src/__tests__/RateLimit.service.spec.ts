@@ -78,7 +78,7 @@ describe('RateLimitService', () => {
     let attempts = 0;
     const maxAttempts = 50;
     while (!service['redis'] && attempts < maxAttempts) {
-      await new Promise((resolve) => setTimeout(resolve, 100));
+      await new Promise(resolve => setTimeout(resolve, 100));
       attempts++;
     }
 
@@ -148,9 +148,9 @@ describe('RateLimitService', () => {
         window: 'invalid',
       };
 
-      await expect(
-        service.checkRateLimit('test-key', invalidOptions),
-      ).rejects.toThrow('Invalid window format');
+      await expect(service.checkRateLimit('test-key', invalidOptions)).rejects.toThrow(
+        'Invalid window format'
+      );
     });
 
     it('should parse different time windows correctly', async () => {
@@ -186,12 +186,7 @@ describe('RateLimitService', () => {
 
       await service.decrementRateLimit('test-key');
 
-      expect(mockRedis.zrevrange).toHaveBeenCalledWith(
-        'test-key',
-        0,
-        0,
-        'WITHSCORES',
-      );
+      expect(mockRedis.zrevrange).toHaveBeenCalledWith('test-key', 0, 0, 'WITHSCORES');
       expect(mockRedis.pipeline).toHaveBeenCalled();
     });
 
@@ -248,11 +243,10 @@ describe('RateLimitService', () => {
         ],
       }).compile();
 
-      const serviceNoRedis =
-        moduleNoRedis.get<RateLimitService>(RateLimitService);
+      const serviceNoRedis = moduleNoRedis.get<RateLimitService>(RateLimitService);
 
       // Wait for initialization
-      await new Promise((resolve) => setTimeout(resolve, 100));
+      await new Promise(resolve => setTimeout(resolve, 100));
 
       const result = await serviceNoRedis.healthCheck();
 
@@ -301,10 +295,9 @@ describe('RateLimitService', () => {
         ],
       }).compile();
 
-      const serviceWithLogger =
-        module.get<RateLimitService>(RateLimitService);
+      const serviceWithLogger = module.get<RateLimitService>(RateLimitService);
 
-      await new Promise((resolve) => setTimeout(resolve, 200));
+      await new Promise(resolve => setTimeout(resolve, 200));
 
       expect(serviceWithLogger).toBeDefined();
       // Logger should be used during initialization if Redis connects

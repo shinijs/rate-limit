@@ -1,4 +1,11 @@
-import { Injectable, Inject, Optional, Logger, LoggerService, OnModuleDestroy } from '@nestjs/common';
+import {
+  Injectable,
+  Inject,
+  Optional,
+  Logger,
+  LoggerService,
+  OnModuleDestroy,
+} from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import type { RateLimitOptions } from './decorators/rate-limit.decorator';
 import type { RateLimitResult } from './RateLimit.interface';
@@ -15,7 +22,7 @@ export class RateLimitService implements IRateLimit, OnModuleDestroy {
     private readonly configService: ConfigService,
     @Optional()
     @Inject(RATE_LIMIT_LOGGER)
-    logger?: LoggerService,
+    logger?: LoggerService
   ) {
     this.logger = logger || new Logger(RateLimitService.name);
     void this.initializeRedis();
@@ -28,7 +35,7 @@ export class RateLimitService implements IRateLimit, OnModuleDestroy {
       // If Redis URL is explicitly null/undefined, skip Redis initialization
       if (redisUrl === null || redisUrl === undefined) {
         this.logger.warn?.(
-          'Redis URL not configured. Rate limiting will operate in fallback mode (memory-based).',
+          'Redis URL not configured. Rate limiting will operate in fallback mode (memory-based).'
         );
         return;
       }
@@ -58,21 +65,16 @@ export class RateLimitService implements IRateLimit, OnModuleDestroy {
           error.message.includes('ERR_MODULE_NOT_FOUND'))
       ) {
         this.logger.warn?.(
-          'ioredis not found. Rate limiting will operate in fallback mode (memory-based). Install ioredis for distributed rate limiting.',
+          'ioredis not found. Rate limiting will operate in fallback mode (memory-based). Install ioredis for distributed rate limiting.'
         );
       } else {
         this.logger.error?.('Failed to initialize Redis connection:', error);
-        this.logger.warn?.(
-          'Rate limiting will operate in fallback mode (memory-based)',
-        );
+        this.logger.warn?.('Rate limiting will operate in fallback mode (memory-based)');
       }
     }
   }
 
-  async checkRateLimit(
-    key: string,
-    options: RateLimitOptions,
-  ): Promise<RateLimitResult> {
+  async checkRateLimit(key: string, options: RateLimitOptions): Promise<RateLimitResult> {
     const windowMs = this.parseWindow(options.window);
     const now = Date.now();
     const windowStart = now - windowMs;
@@ -82,13 +84,7 @@ export class RateLimitService implements IRateLimit, OnModuleDestroy {
     }
 
     try {
-      return await this.redisRateLimit(
-        key,
-        options,
-        now,
-        windowStart,
-        windowMs,
-      );
+      return await this.redisRateLimit(key, options, now, windowStart, windowMs);
     } catch (error) {
       this.logger.error?.('Redis rate limit error:', error);
       return this.fallbackRateLimit(key, options, now);
@@ -100,7 +96,7 @@ export class RateLimitService implements IRateLimit, OnModuleDestroy {
     options: RateLimitOptions,
     now: number,
     windowStart: number,
-    windowMs: number,
+    windowMs: number
   ): Promise<RateLimitResult> {
     const pipeline = this.redis!.pipeline();
 
@@ -141,14 +137,8 @@ export class RateLimitService implements IRateLimit, OnModuleDestroy {
     };
   }
 
-  private fallbackRateLimit(
-    _key: string,
-    options: RateLimitOptions,
-    now: number,
-  ): RateLimitResult {
-    this.logger.warn?.(
-      'Using fallback rate limiting - not suitable for distributed systems',
-    );
+  private fallbackRateLimit(_key: string, options: RateLimitOptions, now: number): RateLimitResult {
+    this.logger.warn?.('Using fallback rate limiting - not suitable for distributed systems');
 
     return {
       allowed: true,
@@ -168,9 +158,7 @@ export class RateLimitService implements IRateLimit, OnModuleDestroy {
 
     const match = window.match(/^(\d+)([smhd])$/);
     if (!match) {
-      throw new Error(
-        `Invalid window format: ${window}. Use format like '5m', '1h', '30s'`,
-      );
+      throw new Error(`Invalid window format: ${window}. Use format like '5m', '1h', '30s'`);
     }
 
     const [, amount, unit] = match;

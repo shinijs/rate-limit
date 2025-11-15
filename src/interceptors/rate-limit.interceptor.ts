@@ -13,10 +13,7 @@ import type { Observable } from 'rxjs';
 import { tap } from 'rxjs/operators';
 import type { Request, Response } from 'express';
 import { RateLimitService } from '../RateLimit.service';
-import {
-  RATE_LIMIT_METADATA,
-  RateLimitOptions,
-} from '../decorators/rate-limit.decorator';
+import { RATE_LIMIT_METADATA, RateLimitOptions } from '../decorators/rate-limit.decorator';
 import { RATE_LIMIT_LOGGER } from '../RateLimit.service';
 
 /**
@@ -85,17 +82,16 @@ export class RateLimitInterceptor implements NestInterceptor {
     private readonly reflector: Reflector,
     @Optional()
     @Inject(RATE_LIMIT_LOGGER)
-    logger?: LoggerService,
+    logger?: LoggerService
   ) {
     this.logger = logger || new Logger(RateLimitInterceptor.name);
   }
 
   intercept(context: ExecutionContext, next: CallHandler): Observable<unknown> {
-    const rateLimitOptions =
-      this.reflector.getAllAndOverride<RateLimitOptions>(
-        RATE_LIMIT_METADATA,
-        [context.getHandler(), context.getClass()],
-      );
+    const rateLimitOptions = this.reflector.getAllAndOverride<RateLimitOptions>(
+      RATE_LIMIT_METADATA,
+      [context.getHandler(), context.getClass()]
+    );
 
     if (!rateLimitOptions) {
       return next.handle();
@@ -115,53 +111,42 @@ export class RateLimitInterceptor implements NestInterceptor {
         error: (error: unknown) => {
           // For error responses, check if we should skip failed requests
           const statusCode =
-            (error as { status?: number; response?: { statusCode?: number } })
-              ?.status ||
-            (error as { status?: number; response?: { statusCode?: number } })
-              ?.response?.statusCode ||
+            (error as { status?: number; response?: { statusCode?: number } })?.status ||
+            (error as { status?: number; response?: { statusCode?: number } })?.response
+              ?.statusCode ||
             500;
           void this.handleResponse(key, statusCode, rateLimitOptions);
         },
-      }),
+      })
     );
   }
 
   private async handleResponse(
     key: string,
     statusCode: number,
-    options: RateLimitOptions,
+    options: RateLimitOptions
   ): Promise<void> {
     try {
       let shouldSkip = false;
 
       // Check if we should skip successful requests (2xx status codes)
-      if (
-        options.skipSuccessfulRequests &&
-        statusCode >= 200 &&
-        statusCode < 300
-      ) {
+      if (options.skipSuccessfulRequests && statusCode >= 200 && statusCode < 300) {
         shouldSkip = true;
-        this.logger.debug?.(
-          'Skipping rate limit increment for successful request',
-          {
-            key,
-            statusCode,
-            skipSuccessfulRequests: options.skipSuccessfulRequests,
-          },
-        );
+        this.logger.debug?.('Skipping rate limit increment for successful request', {
+          key,
+          statusCode,
+          skipSuccessfulRequests: options.skipSuccessfulRequests,
+        });
       }
 
       // Check if we should skip failed requests (4xx/5xx status codes)
       if (options.skipFailedRequests && statusCode >= 400) {
         shouldSkip = true;
-        this.logger.debug?.(
-          'Skipping rate limit increment for failed request',
-          {
-            key,
-            statusCode,
-            skipFailedRequests: options.skipFailedRequests,
-          },
-        );
+        this.logger.debug?.('Skipping rate limit increment for failed request', {
+          key,
+          statusCode,
+          skipFailedRequests: options.skipFailedRequests,
+        });
       }
 
       if (shouldSkip) {
@@ -198,5 +183,3 @@ export class RateLimitInterceptor implements NestInterceptor {
     return typeof pathValue === 'string' ? pathValue : '/';
   }
 }
-
-

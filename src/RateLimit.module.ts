@@ -11,9 +11,7 @@ export interface RateLimitModuleOptions {
 @Global()
 @Module({})
 export class RateLimitModule {
-  static forRoot(
-    options?: RateLimitModuleOptions,
-  ): DynamicModule {
+  static forRoot(options?: RateLimitModuleOptions): DynamicModule {
     const providers: any[] = [
       RateLimitService,
       RateLimitGuard,
@@ -36,12 +34,7 @@ export class RateLimitModule {
       module: RateLimitModule,
       imports: [ConfigModule],
       providers,
-      exports: [
-        RateLimitService,
-        RateLimitGuard,
-        RateLimitInterceptor,
-        'IRateLimit',
-      ],
+      exports: [RateLimitService, RateLimitGuard, RateLimitInterceptor, 'IRateLimit'],
     };
   }
 }
