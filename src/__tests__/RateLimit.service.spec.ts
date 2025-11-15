@@ -139,9 +139,9 @@ describe('RateLimitService', () => {
 
       const result = await service.checkRateLimit('test-key', mockOptions);
 
-      // Should fall back to allowing requests
+      // Should fall back to allowing requests and track hits in memory
       expect(result.allowed).toBe(true);
-      expect(result.totalHits).toBe(0);
+      expect(result.totalHits).toBe(1); // Fallback mode tracks the current request
     });
 
     it('should throw error for invalid window format', async () => {
@@ -418,7 +418,7 @@ describe('RateLimitService', () => {
       });
 
       expect(result.allowed).toBe(true);
-      expect(result.totalHits).toBe(0);
+      expect(result.totalHits).toBe(1); // Fallback mode tracks the current request
       await moduleNoRedis.close();
     });
 
@@ -476,7 +476,7 @@ describe('RateLimitService', () => {
         })
       ).resolves.toMatchObject({
         allowed: true,
-        totalHits: 0,
+        totalHits: 1, // Fallback mode tracks the current request
       });
     });
 
@@ -497,7 +497,7 @@ describe('RateLimitService', () => {
         })
       ).resolves.toMatchObject({
         allowed: true,
-        totalHits: 0,
+        totalHits: 1, // Fallback mode tracks the current request
       });
     });
   });
