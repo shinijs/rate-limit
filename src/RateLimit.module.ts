@@ -1,4 +1,4 @@
-import { Global, Module, DynamicModule, LoggerService, Optional, Inject } from '@nestjs/common';
+import { Global, Module, DynamicModule, LoggerService } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { RateLimitService, RATE_LIMIT_LOGGER } from './RateLimit.service';
 import { RateLimitGuard } from './guards/rate-limit.guard';
@@ -30,7 +30,7 @@ export class RateLimitModule {
         provide: RATE_LIMIT_LOGGER,
         useValue: options.logger,
       });
-    } 
+    }
     // Or use a logger from DI container via token
     else if (options?.loggerToken) {
       providers.push({

@@ -47,12 +47,17 @@ export class RateLimitService implements IRateLimit, OnModuleDestroy {
       const ioredisModule = await import('ioredis');
       // Handle both default and named exports
       // ioredis v5 exports Redis as default or named export depending on module system
-      const RedisClass = (ioredisModule.default || ioredisModule.Redis || ioredisModule) as new (
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const RedisConstructor: any =
+        (ioredisModule as any).default?.Redis ||
+        (ioredisModule as any).Redis ||
+        (ioredisModule as any).default ||
+        ioredisModule;
+
+      this.redis = new (RedisConstructor as new (
         url: string,
         options?: import('ioredis').RedisOptions,
-      ) => import('ioredis').Redis;
-
-      this.redis = new RedisClass(redisUrl, {
+      ) => import('ioredis').Redis)(redisUrl, {
         maxRetriesPerRequest: 3,
         lazyConnect: true,
       });
@@ -158,11 +163,11 @@ export class RateLimitService implements IRateLimit, OnModuleDestroy {
     }
 
     // Remove timestamps outside the current window
-    const validTimestamps = timestamps.filter((timestamp) => timestamp > windowStart);
-    
+    const validTimestamps = timestamps.filter(timestamp => timestamp > windowStart);
+
     // Add current request timestamp
     validTimestamps.push(now);
-    
+
     // Update storage
     this.fallbackStorage.set(key, validTimestamps);
 
@@ -192,7 +197,7 @@ export class RateLimitService implements IRateLimit, OnModuleDestroy {
 
   private cleanupFallbackStorage(windowStart: number): void {
     for (const [key, timestamps] of this.fallbackStorage.entries()) {
-      const validTimestamps = timestamps.filter((timestamp) => timestamp > windowStart);
+      const validTimestamps = timestamps.filter(timestamp => timestamp > windowStart);
       if (validTimestamps.length === 0) {
         this.fallbackStorage.delete(key);
       } else {
