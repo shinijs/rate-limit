@@ -1,0 +1,107 @@
+name: PR Size Check
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+permissions:
+  pull-requests: write
+  contents: read
+
+jobs:
+  check-size:
+    name: Check PR Size
+    runs-on: ubuntu-latest
+    if: github.event.pull_request.draft == false
+
+    steps:
+      - name: Check PR size
+        uses: actions/github-script@v8
+        with:
+          script: |
+            const pr = context.payload.pull_request;
+            const additions = pr.additions;
+            const deletions = pr.deletions;
+            const totalChanges = additions + deletions;
+
+            const thresholds = {
+              small: 100,
+              medium: 500,
+              large: 1000,
+              xl: 2000
+            };
+
+            let size = 'small';
+            let emoji = '✅';
+            let message = '';
+
+            if (totalChanges >= thresholds.xl) {
+              size = 'XL';
+              emoji = '🚨';
+              message = `This PR is **extremely large** (${totalChanges.toLocaleString()} changes). Please consider breaking it into multiple smaller PRs for easier review.`;
+            } else if (totalChanges >= thresholds.large) {
+              size = 'L';
+              emoji = '⚠️';
+              message = `This PR is **large** (${totalChanges.toLocaleString()} changes). Consider breaking it into smaller, focused PRs if possible.`;
+            } else if (totalChanges >= thresholds.medium) {
+              size = 'M';
+              emoji = '📦';
+              message = `This PR is **medium-sized** (${totalChanges.toLocaleString()} changes). Reviewers, please allocate sufficient time.`;
+            } else {
+              size = 'S';
+              emoji = '✅';
+              message = `This PR is **small** (${totalChanges.toLocaleString()} changes). Easy to review!`;
+            }
+
+            const comment = `## ${emoji} PR Size: ${size}
+
+            **Changes:** +${additions.toLocaleString()} / -${deletions.toLocaleString()} (${totalChanges.toLocaleString()} total)
+
+            ${message}
+
+            ---
+            *This check helps maintain code review quality. Smaller PRs are easier to review and merge faster.*`;
+
+            // Find existing bot comment
+            const comments = await github.rest.issues.listComments({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: pr.number,
+            });
+
+            const botComment = comments.data.find(
+              comment => comment.user.type === 'Bot' && comment.body.includes('PR Size:')
+            );
+
+            if (botComment) {
+              // Update existing comment
+              await github.rest.issues.updateComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: botComment.id,
+                body: comment,
+              });
+            } else {
+              // Create new comment
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: pr.number,
+                body: comment,
+              });
+            }
+
+            // Add label based on size
+            const labelName = `size/${size.toLowerCase()}`;
+            try {
+              await github.rest.issues.addLabels({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: pr.number,
+                labels: [labelName],
+              });
+            } catch (error) {
+              // Label might not exist, that's okay
+              console.log(`Label ${labelName} might not exist yet`);
+            }
+
